@@ -26,6 +26,13 @@ class Diffusion:
         sqrt_acp = torch.sqrt(self.alphas_cumprod[t])[:, None, None, None]
         sqrt_1m_acp = torch.sqrt(1 - self.alphas_cumprod[t])[:, None, None, None]
         return sqrt_acp * x0 + sqrt_1m_acp * noise, noise
+    
+    def _posterior_variance(self, t):
+    # t: scalar int (use tensor indexing inside loop)
+        if t == 0:
+            return torch.tensor(0.0, device=self.device)
+        ac = self.alphas_cumprod
+        return ((1 - ac[t-1]) / (1 - ac[t])) * self.betas[t]
 
     @torch.no_grad()
     def p_sample_loop(self, shape, cond=None):
@@ -34,15 +41,18 @@ class Diffusion:
         x = torch.randn(shape, device=device)
         for i in reversed(range(self.T)):
             t = torch.full((b,), i, dtype=torch.long, device=device)
-            eps = self.model(x)
-            beta = self.betas[i]
+            # If conditioning exists, concat now: x_in = torch.cat([x, cond], dim=1)
+            x_in = x if cond is None else torch.cat([x, cond], dim=1)
+            eps = self.model(x_in, t)   # <<< pass timestep
             alpha = self.alphas[i]
-            alpha_cum = self.alphas_cumprod[i]
+            ac = self.alphas_cumprod[i]
+            coef1 = 1.0 / torch.sqrt(alpha)
+            coef2 = (1 - alpha) / torch.sqrt(1 - ac)
+            mean = coef1 * (x - coef2 * eps)
             if i > 0:
+                var = self._posterior_variance(i)
                 noise = torch.randn_like(x)
+                x = mean + torch.sqrt(var) * noise
             else:
-                noise = torch.zeros_like(x)
-            coef1 = 1 / torch.sqrt(alpha)
-            coef2 = (1 - alpha) / torch.sqrt(1 - alpha_cum)
-            x = coef1 * (x - coef2 * eps) + torch.sqrt(beta) * noise
+                x = mean
         return x
