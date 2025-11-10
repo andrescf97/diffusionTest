@@ -1,0 +1,11 @@
+learning_rate: 1e-4
+batch_size: 8
+T: 50
+image_size: 64
+channels: 3
+base_channels: 32
+depth: 3
+data_path: data/synthetic.npy
+cond_path: data/cond.npy
+epochs: 2
+save_every: 1
