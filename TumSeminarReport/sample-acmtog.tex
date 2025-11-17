@@ -85,36 +85,183 @@ Despite these advances, most ML-based super-resolution models suffer from limite
 
 
 \subsection{Methodology}
+\label{subsec:methodology}
 
-To overcome the limited generalization of existing CFD super-resolution methods, \cite{Shu23} propose a \textbf{physics-informed diffusion framework} for reconstructing high-fidelity flow fields from low-resolution or sparse data. The task is formulated as a \textbf{data denoising problem}, modeled using a \textbf{Denoising Diffusion Probabilistic Model (DDPM)} \cite{Ho20}, where high-fidelity fields are progressively degraded by Gaussian noise during training, and the model learns the inverse process that removes noise step-by-step to recover physically consistent solutions.
+In contrast to conventional super-resolution networks that learn an explicit mapping from
+low-fidelity (LF) to high-fidelity (HF) flow fields, the approach of Shu et al.~\cite{Shu23}
+reformulates HF reconstruction as a \emph{conditional denoising problem} and solves it with a
+Denoising Diffusion Probabilistic Model (DDPM)~\cite{Ho20}. The key idea is:
 
-Unlike conventional super-resolution networks, the DDPM is trained exclusively on high-fidelity data, eliminating the need for paired low–high fidelity samples. During inference, the model reconstructs low-resolution or sparse flows by initiating the reverse diffusion process from a mixture of a noisy guidance input and Gaussian noise:
+\begin{itemize}
+    \item The diffusion model is trained \textbf{only on high-fidelity data} and learns to map
+    \emph{noisy HF samples} back to clean HF samples.
+    \item At inference time, a low-fidelity input is first transformed into a noisy sample that
+    resembles the training distribution, and the DDPM then denoises it into a high-fidelity field.
+\end{itemize}
+
+This decouples the reconstruction problem from any specific low-fidelity generation process
+(filtering, downsampling, sparsification) and makes the method more robust to changes in the
+input distribution.
+
+\subsubsection{Problem formulation as conditional denoising}
+
+Let $\boldsymbol{x}_0 \in \mathcal{Y}$ denote a high-fidelity vorticity field from the Kolmogorov
+flow dataset~\cite{Shu23}, and let $\boldsymbol{x}^{(g)} \in \mathcal{X}$ denote a low-fidelity
+observation (e.g.\ uniformly downsampled, filtered, or sparse measurements on the grid).
+Classical super-resolution methods explicitly learn a mapping
+$f_\phi : \mathcal{X} \to \mathcal{Y}$ such that $f_\phi(\boldsymbol{x}^{(g)}) \approx \boldsymbol{x}_0$.
+This coupling to a specific $\mathcal{X}$ makes them sensitive to distribution shifts in the
+low-fidelity data.
+
+Instead, the diffusion-based framework keeps the \emph{model} purely in the high-fidelity
+space and uses the low-fidelity input only as a \emph{guide} for the denoising process.
+Formally, the DDPM learns a family of conditional distributions
+$p_\theta(\boldsymbol{x}_{t-1} \mid \boldsymbol{x}_t)$ on $\mathcal{Y}$, while the LF input
+$\boldsymbol{x}^{(g)}$ is injected via the initialization of the reverse process at a
+chosen time-step $t$.
+
+\subsubsection{Forward diffusion process on high-fidelity data}
+
+During training, only HF samples $\boldsymbol{x}_0 \sim p_{\text{data}}(\mathcal{Y})$ are used.
+A forward (diffusion) process gradually corrupts $\boldsymbol{x}_0$ into Gaussian noise through
+a Markov chain
+\begin{equation}
+    q(\boldsymbol{x}_t \mid \boldsymbol{x}_{t-1}) :=
+    \mathcal{N}\bigl(\boldsymbol{x}_t; \sqrt{\alpha_t}\,\boldsymbol{x}_{t-1},
+    \beta_t \mathbf{I}\bigr),
+    \qquad t = 1,\dots,T,
+\end{equation}
+where $\{\beta_t\}_{t=1}^T$ is a predefined variance schedule and $\alpha_t := 1 - \beta_t$.
+This chain has the closed-form expression
+\begin{equation}
+    q(\boldsymbol{x}_t \mid \boldsymbol{x}_0) =
+    \mathcal{N}\bigl(
+        \boldsymbol{x}_t; \sqrt{\bar{\alpha}_t}\,\boldsymbol{x}_0,
+        (1 - \bar{\alpha}_t)\mathbf{I}
+    \bigr),
+    \qquad
+    \bar{\alpha}_t := \prod_{i=1}^t \alpha_i.
+\end{equation}
+
+Intuitively, $\boldsymbol{x}_t$ is a \emph{controlled mixture} of signal and noise:
+\begin{equation}
+    \boldsymbol{x}_t = \sqrt{\bar{\alpha}_t}\,\boldsymbol{x}_0
+    + \sqrt{1 - \bar{\alpha}_t}\,\boldsymbol{\epsilon},
+    \qquad \boldsymbol{\epsilon} \sim \mathcal{N}(\mathbf{0}, \mathbf{I}).
+\end{equation}
+For small $t$, $\boldsymbol{x}_t$ is close to the original flow field, whereas for large $t$
+it approaches pure Gaussian noise.
+
+\subsubsection{Reverse process and DDPM training objective}
+
+The generative model is defined by a reverse Markov chain
+\begin{equation}
+    p_\theta(\boldsymbol{x}_{0:T}) :=
+    p(\boldsymbol{x}_T)\,
+    \prod_{t=1}^T p_\theta(\boldsymbol{x}_{t-1} \mid \boldsymbol{x}_t),
+    \qquad
+    p(\boldsymbol{x}_T) = \mathcal{N}(\mathbf{0}, \mathbf{I}),
+\end{equation}
+with Gaussian transitions
+\begin{equation}
+    p_\theta(\boldsymbol{x}_{t-1} \mid \boldsymbol{x}_t)
+    := \mathcal{N}\bigl(
+        \boldsymbol{x}_{t-1};
+        \boldsymbol{\mu}_\theta(\boldsymbol{x}_t, t),
+        \Sigma_t \mathbf{I}
+    \bigr).
+\end{equation}
+Following Ho et al.~\cite{Ho20}, the mean $\boldsymbol{\mu}_\theta$ is parameterized in terms of a
+learned \emph{noise predictor} $\boldsymbol{\epsilon}_\theta$:
+\begin{equation}
+    \boldsymbol{\mu}_\theta(\boldsymbol{x}_t, t) =
+    \frac{1}{\sqrt{\alpha_t}}\left(
+        \boldsymbol{x}_t -
+        \frac{\beta_t}{\sqrt{1 - \bar{\alpha}_t}}\,
+        \boldsymbol{\epsilon}_\theta(\boldsymbol{x}_t, t)
+    \right).
+\end{equation}
+The network $\boldsymbol{\epsilon}_\theta$ is implemented as a U-Net~\cite{Ronneberger15}, which
+operates on vorticity fields and is conditioned on the discrete time-step $t$.
+
+The model is trained by minimizing the simplified denoising objective
+\begin{equation}
+    \mathcal{L}_{\text{simple}}(\theta)
+    = \mathbb{E}_{\boldsymbol{x}_0,\,t,\,\boldsymbol{\epsilon}}\left[
+        \bigl\|
+            \boldsymbol{\epsilon}
+            - \boldsymbol{\epsilon}_\theta\bigl(
+                \sqrt{\bar{\alpha}_t}\,\boldsymbol{x}_0
+                + \sqrt{1 - \bar{\alpha}_t}\,\boldsymbol{\epsilon},
+                t
+            \bigr)
+        \bigr\|_2^2
+    \right],
+\end{equation}
+where $\boldsymbol{x}_0 \sim p_{\text{data}}(\mathcal{Y})$,
+$t \sim \mathcal{U}\{1,\dots,T\}$ and
+$\boldsymbol{\epsilon} \sim \mathcal{N}(\mathbf{0},\mathbf{I})$.
+Thus, the DDPM learns to \emph{invert} the forward diffusion process by predicting the noise
+that was added to a HF flow field at any time-step $t$.
+
+\subsubsection{Conditional sampling with low-fidelity guidance}
+
+At test time, the goal is to reconstruct a high-fidelity field from a low-fidelity observation
+$\boldsymbol{x}^{(g)} \in \mathcal{X}$, without retraining the model for each new type of
+low-fidelity data. Instead of starting the reverse chain from pure Gaussian noise
+$\boldsymbol{x}_T \sim \mathcal{N}(\mathbf{0},\mathbf{I})$, Shu et al.~\cite{Shu23} perform
+\emph{partial backward diffusion} starting from an intermediate time-step $t$ initialized by
+a noisy version of the guidance input:
+\begin{equation}
+    \boldsymbol{x}_t
+    = \sqrt{\bar{\alpha}_t}\,g(\boldsymbol{x}^{(g)})
+    + \sqrt{1 - \bar{\alpha}_t}\,\boldsymbol{\epsilon}_t,
+    \qquad
+    \boldsymbol{\epsilon}_t \sim \mathcal{N}(\mathbf{0},\mathbf{I}),
+    \label{eq:guided_init}
+\end{equation}
+where $g(\cdot)$ denotes a preprocessing operator that lifts the low-fidelity observation
+to the HF grid (e.g.\ interpolation or nearest-neighbor padding for sparse data).
+Starting from $\boldsymbol{x}_t$, a DDPM/DDIM-style reverse process
+(e.g.\ the implicit sampler of Song et al.~\cite{Song20DDIM}) is run from $t$ down to $0$:
+\begin{equation}
+    \boldsymbol{x}_{t-1}
+    \sim p_\theta(\boldsymbol{x}_{t-1} \mid \boldsymbol{x}_t),
+    \quad \dots,\quad
+    \boldsymbol{x}_0 \sim p_\theta(\boldsymbol{x}_0 \mid \boldsymbol{x}_1).
+\end{equation}
+The final state $\boldsymbol{x}_0$ is taken as the reconstructed high-fidelity flow field.
+
+\subsubsection{Noise-induced distribution alignment and generalization}
+
+The crucial effect of the initialization in~\eqref{eq:guided_init} is that it maps diverse
+low-fidelity inputs into the \emph{same noisy high-fidelity manifold} that the DDPM was
+trained on. During training, all inputs to $\boldsymbol{\epsilon}_\theta$ have the form
 \[
-x_t = \sqrt{\bar{\alpha}_t}x^{(g)} + \sqrt{1 - \bar{\alpha}_t}\epsilon_t,
+    \boldsymbol{x}_t^{\text{train}}
+    = \sqrt{\bar{\alpha}_t}\,\boldsymbol{x}_0
+    + \sqrt{1 - \bar{\alpha}_t}\,\boldsymbol{\epsilon},
+    \qquad \boldsymbol{x}_0 \sim p_{\text{data}}(\mathcal{Y}).
 \]
-where $x^{(g)}$ is the low-fidelity input, $\epsilon_t \sim \mathcal{N}(0, I)$ represents Gaussian noise, and $\bar{\alpha}_t$ controls the noise level at timestep $t$.  
-This noise-mixing mechanism aligns the distribution of inference inputs with the noisy high-fidelity training samples, significantly improving generalization across different data sources.
+At inference, after preprocessing and noise injection, the guided initialization
+$\boldsymbol{x}_t^{\text{test}}$ in~\eqref{eq:guided_init} has the \emph{same statistical form},
+regardless of how $\boldsymbol{x}^{(g)}$ was generated (different filters, resolutions, or
+sparsity patterns). By choosing $t$ appropriately, the model ensures that:
+\begin{itemize}
+    \item the signal component $\sqrt{\bar{\alpha}_t}\,g(\boldsymbol{x}^{(g)})$ carries the
+    large-scale structure of the low-fidelity observation, while
+    \item the noise component $\sqrt{1 - \bar{\alpha}_t}\,\boldsymbol{\epsilon}_t$ pushes
+    the sample into the region of the space where the DDPM has learned a reliable denoising
+    mapping.
+\end{itemize}
 
-The reverse (denoising) process is parameterized by a U-Net architecture \cite{Ronneberger15}, which estimates the noise $\epsilon_\theta(x_t, t)$ at each timestep. The resulting Markov chain reconstructs the clean data $x_0$ via:
-\[
-p_\theta(x_{t-1}|x_t) = \mathcal{N}(x_{t-1}; \mu_\theta(x_t, t), \Sigma_t),
-\]
-progressively transforming random noise into coherent flow fields.
+In other words, the model is \textbf{not} trained to map low-fidelity $\to$ high-fidelity.
+It is trained to map \emph{noisy high-fidelity-like inputs} to clean high-fidelity fields.
+By first transforming the low-fidelity input into such a noisy sample, the reverse diffusion
+process can be reused for a wide range of low-fidelity data distributions without retraining.
+This noise-induced alignment is the main mechanism behind the improved robustness and
+generalization reported in~\cite{Shu23}.
 
-To ensure physical consistency with the Navier–Stokes equations, the model introduces \textbf{physics-informed guidance} through the PDE residual $G(\omega)$ computed in Fourier space. Two complementary strategies are used:
-
-\paragraph{(1) Learned Encoding of PDE Residuals.}
-The residual gradient $\nabla_x G(x_t)$ is provided as an additional conditioning input to the diffusion network, yielding $\epsilon_\theta[x_t, \nabla_x G(x_t)]$. This enables the model to learn a nonlinear combination of data-driven and physics-based gradients, effectively guiding the denoising toward PDE-consistent solutions during both training and inference.
-
-\paragraph{(2) Direct Gradient Descent on PDE Residuals.}
-Alternatively, the model enforces physical constraints during sampling by incorporating a correction term into the DDIM update rule:
-\[
-x_{t-1} = x_{t-1}^{(DDIM)} - \lambda \nabla_x \|G(x_t)\|^2,
-\]
-where $\lambda$ controls the strength of the physics correction. This approach acts as an energy minimization step at each iteration, steering the diffusion trajectory toward dynamically valid flow fields without modifying the network architecture.
-
-Both strategies balance data-driven reconstruction and physical consistency. The first integrates physics implicitly within the learned model, while the second enforces it explicitly during inference.  
-For sparse inputs, an additional iterative refinement loop is used: each denoised output serves as a new guidance input for the next diffusion cycle until convergence to a stable, physically coherent flow field.
 
 \subsubsection{Implementation}
 
