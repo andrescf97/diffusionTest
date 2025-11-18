@@ -46,7 +46,7 @@ Building on this foundation, the present study reproduces and analyzes the core 
 
 
 \thanks{This report is a part of the lecture, Master-Seminar - Deep Learning in
-  Computer Graphics, Informatics 15, Technical University of Munich.
+  Physics, Informatics 15, Technical University of Munich.
   }
 
 
@@ -74,34 +74,45 @@ promising step toward scalable, reliable, and physics-aware data reconstruction 
 % Head 1
 \section{Summary of Paper}
 
-% Head 2
 \subsection{Problem Context}
 
-High-fidelity Computational Fluid Dynamics (CFD) simulations are fundamental for analyzing how engineering systems interact with complex fluid flows. However, their computational cost increases rapidly with the Reynolds number, as Direct Numerical Simulations (DNS) \cite{Moin98} require solving the full Navier–Stokes equations in both space and time. This results in a long-standing trade-off between accuracy and computational efficiency. Lower-cost approaches such as Reynolds-Averaged Navier–Stokes (RANS) \cite{Launder74}, Large Eddy Simulations (LES) \cite{Pitsch06}, and hybrid RANS–LES models \cite{Shur08} introduce sub-grid scale models that estimate effective eddy viscosities using simplified assumptions \cite{Boffetta12}. While these models significantly reduce computational effort, they do so at the expense of fidelity, making it challenging to resolve fine-scale turbulent structures at high Reynolds numbers.
+High-fidelity CFD simulations provide accurate representations of turbulent flows but remain
+computationally prohibitive at high Reynolds numbers due to the cost of resolving all
+spatial and temporal scales. Classical alternatives such as RANS, LES, and hybrid
+RANS–LES reduce this cost by introducing modeling assumptions, but at the expense of losing
+fine-scale structure. In recent years, machine learning models—particularly CNN- and
+GAN-based super-resolution networks—have been applied to reconstruct high-resolution flow
+fields from under-resolved numerical or experimental inputs. While these architectures
+perform well under fixed training conditions, they generalize poorly: each model is tailored
+to a specific low-fidelity dataset and tends to fail when the degradation process differs
+from the one seen during training.
 
-Recent developments in machine learning (ML) have attempted to bridge this gap by reconstructing high-fidelity CFD data from low-fidelity numerical or experimental inputs. Convolutional Neural Networks (CNNs), particularly U-Net architectures with skip connections and multi-scale filters, have demonstrated success in recovering high-resolution flow fields with strong quantitative metrics such as Peak Signal-to-Noise Ratio (PSNR) and Structural Similarity Index (SSIM) \cite{Pant20}. More advanced architectures, such as multi-scale enhanced super-resolution Generative Adversarial Networks (GANs) with physics-based losses \cite{Yousif21}, and CycleGANs trained on unpaired turbulence data \cite{Kim21}, have further improved reconstruction quality even without paired datasets. Other approaches focus on correcting numerical discretization errors using neural networks trained on Eulerian \cite{Zhumekenov19, Wang19, Pfaff20} or Lagrangian \cite{Ummenhofer19, Li22, SanchezGonzalez20, Ladicky15} representations of the flow.
-
-Despite these advances, most ML-based super-resolution models suffer from limited generalization. They are trained on specific low-fidelity datasets and often fail when the input distribution during inference differs significantly from that of the training data. This dependency on paired, distribution-specific datasets limits scalability and real-world applicability: each new source of under-resolved or experimental data typically requires retraining. Consequently, there remains a need for a more generalizable, physics-consistent framework capable of reconstructing high-fidelity flow fields from diverse low-fidelity or sparse inputs without retraining.
-
+This motivates the need for a reconstruction method that is not tied to a particular
+downsampling, filtering, or sparsification operator and that can generalize across
+low-fidelity input distributions without retraining.
 
 \subsection{Methodology}
 \label{subsec:methodology}
 
-In contrast to conventional super-resolution networks that learn an explicit mapping from
-low-fidelity (LF) to high-fidelity (HF) flow fields, the approach of Shu et al.~\cite{Shu23}
-reformulates HF reconstruction as a \emph{conditional denoising problem} and solves it with a
-Denoising Diffusion Probabilistic Model (DDPM)~\cite{Ho20}. The key idea is:
+Shu et al.~\cite{Shu23} address this problem by reformulating CFD super-resolution as a
+\emph{conditional denoising} task solved with a Denoising Diffusion Probabilistic Model
+(DDPM). Unlike conventional approaches that learn a direct mapping from low-fidelity (LF) to
+high-fidelity (HF) data, their framework trains exclusively on HF flow fields. The model
+learns to invert a Gaussian corruption process: during training, clean HF samples are
+progressively noised; during inference, the LF observation is embedded into this same noisy
+HF manifold and the reverse diffusion process denoises it back into a high-fidelity field.
 
-\begin{itemize}
-    \item The diffusion model is trained \textbf{only on high-fidelity data} and learns to map
-    \emph{noisy HF samples} back to clean HF samples.
-    \item At inference time, a low-fidelity input is first transformed into a noisy sample that
-    resembles the training distribution, and the DDPM then denoises it into a high-fidelity field.
-\end{itemize}
-
-This decouples the reconstruction problem from any specific low-fidelity generation process
-(filtering, downsampling, sparsification) and makes the method more robust to changes in the
-input distribution.
+Concretely, any LF input is first projected to the HF grid and then mixed with Gaussian
+noise at a chosen diffusion time-step,
+\[
+\boldsymbol{x}_t
+= \sqrt{\bar{\alpha}_t}\,g(\boldsymbol{x}^{(g)})
++ \sqrt{1 - \bar{\alpha}_t}\,\boldsymbol{\epsilon},
+\]
+so that its distribution matches that of noisy HF samples seen during training. This
+noise-induced alignment decouples the reconstruction model from the specifics of the LF
+generation process and is the main driver of the strong generalization reported in the
+paper.
 
 \subsubsection{Problem formulation as conditional denoising}
 
@@ -262,122 +273,342 @@ process can be reused for a wide range of low-fidelity data distributions withou
 This noise-induced alignment is the main mechanism behind the improved robustness and
 generalization reported in~\cite{Shu23}.
 
+\subsubsection{Optional physics-informed guidance}
+\label{subsubsec:physics_guidance}
 
-\subsubsection{Implementation}
+On top of the purely data-driven DDPM reconstruction, Shu et al.~\cite{Shu23} propose to
+incorporate information from the governing Navier--Stokes equation in vorticity form,
+\begin{equation}
+    G(\omega) :=
+    \partial_t \omega
+    + \boldsymbol{u} \cdot \nabla \omega
+    - \frac{1}{\mathrm{Re}} \nabla^2 \omega
+    - f(\boldsymbol{x})
+    = 0,
+\end{equation}
+by using the \emph{PDE residual} as a guidance signal during sampling. Given a predicted
+vorticity field $\omega$ (or, in practice, a triplet of frames
+$[\omega_{t-1}, \omega_t, \omega_{t+1}]$), the residual
+$r := G(\omega)$ is computed numerically and its gradient with respect to the field,
+\begin{equation}
+    \boldsymbol{c} := \frac{\partial r}{\partial \omega},
+\end{equation}
+is used as a physics-informed conditioning variable.
 
-The proposed approach is evaluated on two-dimensional Kolmogorov flow, governed by the incompressible Navier–Stokes equations in vorticity form. The simulations are performed at a Reynolds number of 1000 under periodic boundary conditions, with a forcing term 
-\[
-f(x) = -4\cos(4x_2) - 0.1\,\omega(x,t),
-\]
-which maintains turbulence while preventing excessive energy accumulation. The dataset consists of 40 simulated sequences of 10 seconds each, generated on a $2048 \times 2048$ grid and downsampled to $256 \times 256$. The first 36 sequences are used for training, while the remaining four are reserved for testing. 
+The first variant, referred to as \emph{learned residual guidance}, augments the DDPM
+network input with $\boldsymbol{c}$ and trains the U-Net to predict the noise
+$\boldsymbol{\epsilon}_\theta(\boldsymbol{x}_t, t, \boldsymbol{c})$. A classifier-free
+guidance scheme~\cite{Ho22ClassifierFree} is then used at inference time to combine the
+conditional and unconditional predictions,
+\begin{equation}
+    \tilde{\boldsymbol{\epsilon}}_\theta
+    = \boldsymbol{\epsilon}_\theta(\boldsymbol{x}_t, t, \boldsymbol{c})
+    + w\bigl[
+        \boldsymbol{\epsilon}_\theta(\boldsymbol{x}_t, t, \boldsymbol{c})
+        - \boldsymbol{\epsilon}_\theta(\boldsymbol{x}_t, t, \varnothing)
+    \bigr],
+\end{equation}
+where $w$ is a guidance strength. Intuitively, the score estimate is nudged towards states
+that both look like realistic turbulence and yield a smaller PDE residual.
 
-The model operates on vorticity fields from three consecutive frames to capture temporal derivatives, and the PDE residuals are computed using Fourier transforms for spatial derivatives and finite differences for temporal derivatives. This combination allows accurate evaluation of the convection and diffusion terms, while maintaining numerical stability and ensuring that the reconstructed flow fields respect the underlying physical dynamics.
+The second variant, \emph{direct residual descent}, keeps the original DDPM architecture
+unchanged and instead injects the residual gradient directly into the DDIM update. In this
+case, each reverse step is modified as
+\begin{equation}
+    \boldsymbol{x}_{t-1}
+    = \text{DDIMStep}(\boldsymbol{x}_t, \tilde{\boldsymbol{\epsilon}}_\theta)
+      - \lambda \boldsymbol{c},
+\end{equation}
+with a step size $\lambda > 0$. Here the role of $\boldsymbol{c}$ is analogous to taking a
+small gradient-descent step to reduce the PDE residual at every denoising iteration. Both
+variants leave the \emph{core} reconstruction mechanism unchanged: the DDPM still denoises
+noisy, HF-like inputs into high-fidelity flow fields, and the physics-based terms act only
+as additional guidance during sampling.
 
 \bigskip
 
 Through this framework, \cite{Shu23} demonstrate that their diffusion-based approach can reconstruct high-fidelity flow fields from both low-resolution and sparsely sampled inputs with strong accuracy and generalization. By combining probabilistic denoising with physics-informed conditioning, the model bridges the gap between data-driven learning and physical laws, providing a scalable and robust solution for CFD super-resolution.
 
 \section{Experimental Setup}
+\label{sec:experimental_setup}
 
-To further explore the generalization capability of physics-informed diffusion models, a smaller-scale experiment was implemented using a simplified flow configuration.  
-The chosen test case is the \textbf{decaying two-dimensional turbulence} problem governed by the incompressible Navier–Stokes equations in vorticity form:
+To complement the theoretical discussion of diffusion-based reconstruction, I implemented a
+minimal DDPM in PyTorch targeting small two-dimensional CFD-style fields. The goal of this
+experiment was not to reproduce the full physics-informed framework of Shu et al.~\cite{Shu23},
+but to validate the core denoising mechanism on a lightweight synthetic dataset and to
+inspect the training and sampling behaviour in practice.
 
+\paragraph{Data and preprocessing.}
+
+All data are stored as NumPy arrays with shape $[N, C, H, W]$, where $C = 3$ and
+$H = W = 64$ by default. The channels can be interpreted as three scalar fields on the same
+grid (e.g.\ vorticity snapshots at neighbouring times or different flow components), but in
+this implementation they simply serve as generic ``CFD-style'' fields rather than true DNS
+solutions. Synthetic datasets are generated by a generic synthetic script,
+which writes both the main array \texttt{data.npy} and an associated per-sample conditioning
+array \texttt{cond.npy} with three scalar parameters (intended to represent, for example,
+forcing amplitude, dissipation scale and Reynolds number).
+
+For future work, the U-Net is configured to accept concatenated data and conditioning
+channels, with a default of \texttt{in\_channels = 6} and \texttt{out\_channels = 3}. In the
+experiments reported here, however, the conditioning is not used: only the three data
+channels are loaded during training, and the conditioning array is ignored.
+
+\paragraph{Model architecture.}
+
+The score network is a compact U-Net. The design
+follows a standard encoder–decoder structure with skip connections, but is deliberately small
+(depth $= 3$, base number of feature channels $= 32$) to keep training feasible on a single
+GPU within a few days.
+
+To mimic the periodic boundary conditions used in Kolmogorov-flow benchmarks, every
+\texttt{Conv2d} layer is instantiated with circular padding, so that the
+network is equivariant to toroidal shifts instead of imposing artificial zero-padding at the
+domain boundaries. The U-Net also includes sinusoidal time-step embeddings that are passed
+through a small MLP and used as FiLM-style modulation parameters inside intermediate blocks.
+
+Conceptually, this would allow the model to condition on the diffusion time-step $t$ and, in
+a later extension, on external parameters such as the synthetic flow settings. In the
+current training script, however, the DDPM is used in its simplest form: the training loop 
+minimises the standard noise-prediction loss and, in the version
+used for this report, does not yet feed either the time-step or the conditioning vector into
+the network. Practically, the model learns a mapping
+$\boldsymbol{\epsilon}_\theta : \boldsymbol{x}_t \mapsto \hat{\boldsymbol{\epsilon}}$ that
+predicts the added noise from the noisy input alone.
+
+\paragraph{Diffusion process and training.}
+
+A linear noise schedule
+$\{\beta_t\}_{t=1}^T$ is used, constructed as
 \[
-\frac{\partial \omega}{\partial t} + \mathbf{u}\cdot\nabla \omega = \frac{1}{Re}\nabla^2 \omega, 
-\quad 
-\nabla\cdot\mathbf{u} = 0,
-\quad 
-\mathbf{u} = \nabla^\perp \psi,\ \psi = \nabla^{-2}\omega.
+\beta_t \in \operatorname{linspace}(10^{-4}, 2 \cdot 10^{-2}, T),
 \]
+with corresponding $\alpha_t = 1 - \beta_t$ and cumulative products
+$\bar{\alpha}_t = \prod_{i=1}^t \alpha_i$ cached for efficiency. The model is trained with
+the usual DDPM objective of Ho et al.~\cite{Ho20}, i.e.\ predicting the Gaussian noise
+$\boldsymbol{\epsilon}$ added in the forward process at a randomly sampled time-step $t$.
 
-No external forcing is applied, and the flow energy naturally decays over time.  
-This configuration maintains the nonlinear vortex interactions characteristic of turbulence while simplifying boundary conditions and external inputs.
+All hyperparameters are defined in a configuration file, including the learning
+rate, batch size, image size, number of channels, base channels, U-Net depth, the number of
+diffusion steps $T$ (default $T = 50$), total epochs and checkpoint frequency.
+Checkpoints store both the model and optimiser state, making it
+possible to resume training or run sampling experiments from intermediate models. The
+implementation assumes powers-of-two image sizes to match the encoder/decoder strides; minor
+mismatches are handled by interpolation in the decoder.
 
-\paragraph{Dataset.}
-A pseudo-spectral solver implemented in PyTorch was used to simulate the flow under periodic boundary conditions on a square domain $(0,2\pi)^2$ with a Reynolds number of $Re = 1000$.  
-The high-fidelity data were generated on a $256\times256$ grid and downsampled to $64\times64$ and $32\times32$ to form the low-fidelity inputs.  
-A total of 20 temporal sequences of 5 seconds each were simulated with a time step of $\Delta t = 1/32$ s, yielding 160 frames per sequence.  
-The dataset was split into 16 sequences for training and 4 for testing.
+An optional utility is provided to downsample
+external fields to the target resolution and stack them into the expected $[N, C, H, W]$
+format, but the experiments in this report rely solely on the synthetic generator.
 
-\paragraph{Preprocessing.}
-Each training sample consists of three consecutive vorticity frames $[\omega_{t-1}, \omega_t, \omega_{t+1}]$ used to approximate temporal derivatives.  
-Spatial derivatives were computed in Fourier space, and the PDE residual
-\[
-r = \partial_t \omega + \mathbf{u}\cdot\nabla \omega - \tfrac{1}{Re}\nabla^2\omega
-\]
-was used to evaluate physical consistency.  
-The gradient of the residual, $c = \nabla_{x_t}r$, served as the physics-guidance signal for both training and inference.
+\paragraph{Sampling procedure.}
 
-\paragraph{Model Variants.}
-Three model configurations were evaluated:
-\begin{enumerate}
-    \item \textbf{Baseline DDPM:} trained purely on data without physics guidance.
-    \item \textbf{Physics-Informed (Strategy 1):} residual gradient encoded as an additional conditioning input.
-    \item \textbf{Physics-Informed (Strategy 2):} gradient-descent correction term applied during the sampling process.
-\end{enumerate}
-A standard U-Net-based super-resolution model was trained as a reference baseline to compare reconstruction quality and generalization.
+Sampling is performed via the ancestral DDPM reverse process. Given a desired output shape
+(e.g.\ \texttt{[batch\_size, 3, 64, 64]}), the sampler initialises $\boldsymbol{x}_T$ as
+standard Gaussian noise and iteratively applies the learned reverse transitions
+$p_\theta(\boldsymbol{x}_{t-1} \mid \boldsymbol{x}_t)$ down to $t=0$.
 
-\paragraph{Inference Procedure.}
-Low-fidelity inputs were mixed with Gaussian noise to produce guided noisy samples:
-\[
-x_t = \sqrt{\bar{\alpha}_t}x^{(g)} + \sqrt{1-\bar{\alpha}_t}\epsilon_t,
-\]
-where $x^{(g)}$ represents the downsampled or sparse flow field and $\epsilon_t \sim \mathcal{N}(0,I)$.  
-The denoising chain was then applied iteratively to reconstruct high-fidelity outputs, optionally using the physics correction term from Strategy 2:
-\[
-x_{t-1} = x_{t-1}^{(DDIM)} - \lambda \nabla_x \|G(x_t)\|^2.
-\]
-For extremely sparse inputs, iterative refinement ($K=3$ cycles) was employed until convergence.
+No low-fidelity input,
+PDE residual or external conditioning is provided to the sampler. Instead, the experiment
+focuses on the ability of the trained DDPM to transform pure Gaussian noise into coherent
+CFD-style patterns that qualitatively resemble the synthetic training set.
 
 \paragraph{Evaluation.}
-Model performance was assessed using quantitative metrics such as Root Mean Square Error (RMSE), Peak Signal-to-Noise Ratio (PSNR), and Structural Similarity Index (SSIM), as well as spectral comparisons of kinetic energy and vorticity fields to evaluate physical realism.
 
-\subsection{Results and Discussion}
-\textbf{[To be completed.]}
-\vspace{1cm}
-% TODO: Insert figures and quantitative comparisons here
-% TODO: Add discussion on model generalization, spectral accuracy, and physics consistency
-\vspace{1cm}
+Given the pedagogical scope and the synthetic nature of the data, evaluation is primarily
+qualitative. During training, I monitored the denoising loss as a proxy for how well the model
+learns the forward process. After training, I generated batches of samples from the latest
+checkpoint and compared them visually against training examples. The comparisons focus on the presence of large-scale coherent
+structures and the diversity of generated fields, rather than on strict quantitative
+measures such as RMSE or energy spectra.
+
+Overall, this minimal implementation serves as a controlled environment to test and better
+understand the core DDPM mechanism discussed in Section~\ref{subsec:methodology}, before
+introducing additional complexity such as explicit low-fidelity conditioning or
+physics-informed guidance.
+
+\section{Results}
+\label{sec:results}
+
+\subsection{Training dynamics}
+
+The loss curve for training and validation in Appendix~\ref{appendix:loss_curve} shows the evolution of the training and validation losses over
+20 epochs for the minimal DDPM implementation. The loss plotted on the validation set is
+the standard denoising objective used in DDPMs, i.e.\ the mean squared error between the
+predicted noise and the Gaussian noise that was added in the forward process. On the
+training set, however, I experimented with augmenting this loss by an additional
+physics-inspired penalty term (e.g.\ based on discrete differential operators), applied only
+during training and not in validation.
+
+The resulting curves exhibit an unusual pattern. The validation loss (orange) decreases
+smoothly and monotonically from approximately $0.35$ to $0.21$, indicating that the model
+does learn to denoise the synthetic fields in the sense of the standard DDPM objective.
+In contrast, the training loss (blue) initially decreases during the first few epochs, but
+then exhibits a sharp spike and remains noticeably higher than the validation loss, with
+strong fluctuations.
+
+This behaviour is not consistent with classical overfitting (where one would expect the
+training loss to continue decreasing while the validation loss stagnates or increases).
+Instead, it strongly suggests an \emph{objective mismatch} between training and validation:
+once the additional physics term is activated, the reported training loss no longer measures
+the same quantity as the validation loss. In other words, the DDPM part of the model
+appears to improve steadily, but the extra penalty term dominates and destabilises the
+training objective.
+
+Several practical factors likely contribute to this instability:
+
+\begin{itemize}
+    \item The physics term is not carefully scaled relative to the $\varepsilon$-MSE, so its
+    magnitude can be orders of magnitude larger and overwhelm the denoising loss.
+    \item The discrete differential operators used in the penalty (e.g.\ gradients or
+    Laplacians) are sensitive to boundary conditions, aliasing and grid spacing; if their
+    implementation does not match the data generation process, the penalty effectively
+    introduces structured label noise.
+    \item The learning rate and optimisation settings were tuned for the pure DDPM loss.
+    Adding a stiff additional term without re-tuning can easily produce the kind of noisy,
+    non-monotonic training curve observed here.
+\end{itemize}
+
+From this experiment, the main takeaway is that the \emph{core} DDPM denoising mechanism
+can be trained stably on synthetic CFD-style fields (as indicated by the steadily decreasing
+validation loss), but naively adding physics-inspired penalties to the objective leads to
+unstable and difficult-to-interpret training dynamics. This mirrors, in a simplified setting,
+one of the conceptual issues in the original paper: while physics-informed guidance is
+attractive in theory, in practice it requires very careful numerical design and scaling to
+avoid degrading the behaviour of the underlying diffusion model rather than improving it.
+
 
 \section{Conclusions}
-
-\subsection{Summary of Contributions}
-
-The work of \cite{Shu23} presents a diffusion-based deep learning framework that merges generative probabilistic modeling with physical principles to reconstruct high-fidelity computational fluid dynamics (CFD) data. The study reformulates the super-resolution problem as a denoising task through a Denoising Diffusion Probabilistic Model (DDPM) \cite{Ho20}, where high-fidelity flow fields are progressively corrupted with Gaussian noise during training and then reconstructed through a learned reverse process. This formulation allows the model to generate physically consistent high-fidelity data from low-resolution or sparsely sampled inputs without the need for paired training datasets. 
-
-A central innovation in this approach lies in the guided sampling process, which introduces a noise-mixing mechanism to align low-fidelity inference data with the noisy high-fidelity samples seen during training. This improves model generalization across diverse input distributions, addressing one of the key weaknesses of previous CNN- and GAN-based super-resolution methods. Furthermore, the model integrates physical knowledge through two physics-informed strategies: one that encodes the residual of the governing Navier–Stokes equations as additional conditioning input during training, and another that applies a gradient-based correction term to the sampling process during inference. Both mechanisms ensure that reconstructed fields not only reproduce the spatial and temporal statistics of the training data but also satisfy the underlying fluid dynamics equations. The method was validated using two-dimensional Kolmogorov flow at a Reynolds number of 1000, demonstrating improved reconstruction accuracy and generalization compared to baseline deep learning models.
-
 \subsection{Advantages and Scientific Impact}
 
-The diffusion-based framework proposed by \cite{Shu23} constitutes a significant methodological advance in the application of machine learning to CFD. One of its major strengths is its ability to generalize to unseen input distributions. By training exclusively on high-fidelity data and introducing noise mixing during inference, the model can handle varying levels of data sparsity and resolution without retraining. This decoupling of the model from a specific low-fidelity distribution makes it far more adaptable than conventional CNN or GAN architectures, which typically overfit to a particular dataset.
+The main conceptual advance of \cite{Shu23} is not the specific physics add-ons, but the
+reformulation of CFD super-resolution as a \emph{conditional denoising} problem solved by a
+DDPM. By training the model exclusively on high-fidelity (HF) data and learning to invert a
+fixed Gaussian corruption process, the network becomes independent of any particular
+low-fidelity (LF) generation pipeline. At inference time, arbitrary LF observations
+(downsampled, filtered or sparsely sampled) are first embedded into the noisy HF manifold
+via noise mixing, and the same reverse diffusion process is reused to reconstruct the flow.
+This decoupling of the reconstruction model from the LF distribution addresses a key
+weakness of classical CNN or GAN approaches, which typically must be retrained whenever the
+measurement operator or resolution changes and tend to fail under distribution shift.
 
-Another central advantage of the proposed framework is its explicit incorporation of physical laws. The use of the Navier–Stokes residual as a corrective signal constrains the denoising trajectory to follow physically valid states, reducing unphysical artifacts and improving the spectral coherence of the reconstructed flow fields. The DDPM formulation also ensures stable optimization, avoiding the convergence issues and mode collapse commonly encountered in adversarial learning. Furthermore, as a probabilistic generative model, the diffusion process inherently allows for uncertainty estimation by sampling multiple plausible reconstructions, paving the way for future work in uncertainty quantification within fluid mechanics. 
+A second important advantage is the robustness and stability inherited from the diffusion
+framework itself. DDPMs are trained with a well-behaved denoising objective, avoiding the
+mode-collapse and adversarial instabilities that often plague GAN-based surrogates. In the
+context of CFD, this translates into generative models that reliably produce physically
+plausible flow fields across a range of noise levels and degradation types. The experiments
+in \cite{Shu23} show that, even without sophisticated conditioning mechanisms, the diffusion
+model can recover fine-scale structures and maintain reasonable energy spectra from severely
+corrupted inputs. In my own minimal implementation, the DDPM’s  $\varepsilon$-prediction mechanism behaved consistently
+with the theory: the validation loss decreased smoothly as the model learned to denoise the
+synthetic fields, even though the generated samples were still far from realistic CFD
+solutions. While the experiment revealed that naive additions such as physics-style penalty
+terms can destabilize training, it also reinforced the central insight of \cite{Shu23}: the
+HF-only diffusion formulation provides a stable and well-posed learning problem, independent
+of the specifics of the low-fidelity data or the reconstruction task. In this sense, the
+strength of the framework stems from the DDPM core, not from task-specific architectural
+modifications.
 
-Finally, the architecture’s modularity makes it a promising foundation for integration with other deep learning paradigms. The model can be coupled with transformer-based encoders, graph neural networks, or even embedded within numerical solvers for hybrid CFD–ML systems. In this sense, the diffusion framework provides a flexible bridge between physics-based simulation and data-driven modeling, offering a structured path toward generalizable and physically grounded fluid reconstruction.
+The proposed framework also offers a natural interface for incorporating physics in a
+modular way. When the governing equations and discretisation are known exactly, the
+Navier-Stokes residual can be evaluated and used as an additional guidance signal during
+sampling, nudging the reverse diffusion trajectory toward states that better satisfy the
+PDE. Although the quantitative improvements reported in \cite{Shu23} are modest and largely
+confined to idealised settings, this mechanism illustrates how diffusion models can act as
+flexible priors that can be combined with physics-based operators or numerical solvers. More
+broadly, the approach positions diffusion models as a bridge between data-driven learning
+and traditional CFD: the same generative model can, in principle, be coupled with different
+measurement operators, embedded into hybrid CFD–ML workflows, or extended with latent-space
+or transformer-based architectures, providing a structured path toward more general and
+physically grounded flow reconstruction methods.
 
 \subsection{Limitations and Open Challenges}
 
-Despite its conceptual strengths, several challenges remain before diffusion-based CFD models can be adopted in large-scale scientific or engineering workflows. The most immediate limitation is computational cost. Because the reverse diffusion process requires hundreds of iterative denoising steps, inference times are significantly longer than those of single-pass neural surrogates or reduced-order models. Although this iterative nature enhances stability, it limits the model’s practicality for real-time or high-resolution three-dimensional applications. 
+Despite the methodological elegance of the diffusion-based framework, several important
+limitations must be acknowledged before such models can be deployed in realistic CFD
+scenarios. The most substantive limitation concerns the physics-informed guidance proposed
+in \cite{Shu23}. Although attractive in principle, the approach relies on assumptions that
+hold only in highly idealised settings. The PDE residual is computed from three consecutive
+DNS frames using a central-difference approximation of the time derivative, which
+implicitly requires access to the ``future'' frame $\omega_{t+1}$. This violates the
+causality constraints of any forecasting or online reconstruction task and restricts the
+method to offline post-processing where the full trajectory is already known. Moreover,
+the residual itself is evaluated using Fourier-based operators under periodic boundary
+conditions and a fixed Reynolds number. This makes the physics correction highly dependent
+on the availability of perfect PDE knowledge and an exact spectral discretisation.
+As a result, the physics-guided variants improve residuals mainly in the same synthetic
+Kolmogorov-flow setting in which they are trained, but do not readily generalise to more
+realistic geometries, imperfect data, or unknown governing parameters.
 
-The current framework is also constrained by its reliance on two-dimensional periodic turbulence. While this setting offers a controlled benchmark, it does not capture the full complexity of real-world CFD problems involving non-periodic boundaries, varying Reynolds numbers, or multiphysics interactions. Extending the approach to three-dimensional or irregular domains would require both algorithmic and architectural adaptations, particularly because the Fourier-based residual computation assumes uniform periodic grids. This assumption simplifies derivative estimation but prevents direct application to geometrically complex meshes or boundary-layer problems.
+A second central limitation is computational efficiency. Diffusion models rely on 
+hundreds of reverse denoising iterations, each requiring a full U-Net pass. While this
+iterative structure contributes to the model’s stability and robustness, it comes at a
+significant computational cost compared to single-pass neural surrogates, reduced-order
+models, or learned PDE solvers. For practical CFD applications—especially three-dimensional
+flows, high-resolution grids, or parameter sweeps—this sampling overhead becomes prohibitive.
+Recent benchmark studies confirm that diffusion-based surrogates offer strong physical
+consistency but still face substantial barriers in terms of runtime and scalability
+\cite{2408.11104v3, liu-thuerey-2024-uncertainty-aware-surrogate-models-for-airfoil-flow-simulations-with-denoising-diffusion-probabilistic}.
 
-Another limitation concerns the sensitivity of the physics–data coupling term. The balance between learned data-driven reconstruction and PDE residual correction, controlled by the parameter $\lambda$, must be carefully tuned. Excessive weighting toward the physics term can distort the denoising trajectory, while insufficient weighting fails to enforce physical constraints. Additionally, while the diffusion model is inherently probabilistic, the study does not explicitly quantify uncertainty in its predictions. The lack of calibrated uncertainty measures limits its interpretability and prevents its use in safety-critical or design-sensitive CFD applications. 
-
-Recent works have highlighted similar issues. Benchmark studies of diffusion-based surrogate models \cite{2408.11104v3} show that while these models achieve remarkable stability and physical fidelity, their inference times remain high, and their uncertainty quantification capabilities are underdeveloped. Related research on diffusion-based surrogates for airfoil flows \cite{liu-thuerey-2024-uncertainty-aware-surrogate-models-for-airfoil-flow-simulations-with-denoising-diffusion-probabilistic} confirms that improved uncertainty awareness and efficient sampling strategies are necessary for the diffusion framework to transition from a research concept to a practical modeling tool.
+Finally, although diffusion models are probabilistic in nature, \cite{Shu23} does not
+explicitly quantify uncertainty in the reconstructed fields. The absence of calibrated
+uncertainty estimates limits the interpretability of the predictions and restricts the use
+of such models in safety-critical or engineering design workflows, where reliability and
+confidence bounds are essential. Together, these challenges highlight that while diffusion
+models provide a promising and conceptually powerful framework, substantial work remains
+before they can be integrated into production-level CFD pipelines.
 
 \subsection{Future Work and Research Directions}
 
-Future work should focus on expanding the scalability, efficiency, and interpretability of physics-informed diffusion models for CFD. One key direction is extending the framework to three-dimensional turbulence and geometrically complex domains. This could be achieved using latent-space diffusion models or conditional neural fields that reduce the computational burden while preserving physical accuracy. A second direction involves accelerating the sampling process. Techniques such as model distillation, learned time-step scheduling, or single-step approximations could significantly reduce inference time without sacrificing accuracy, addressing one of the major bottlenecks in applying diffusion models to large-scale CFD.
+Recent developments since \cite{Shu23} point toward two concrete and promising directions for
+advancing diffusion-based CFD models beyond the limitations of the original framework.
+A first direction involves replacing the idealised downsampling–upsampling setting of Shu et al.
+with physically consistent guidance derived directly from coarse numerical solvers.  
+Self-guided diffusion models such as SG-Diff \cite{moser2024sgdiff} introduce a principled
+mechanism for reconstructing high-resolution flows from solver-generated low-resolution
+fields using a predictor–corrector–advancer sampling scheme and importance-weighted training
+that emphasises fine-scale structures.  
+Unlike the physics-informed guidance in \cite{Shu23}, which requires access to future frames
+and perfect spectral derivatives, these self-guided methods operate on causally valid inputs
+and have demonstrated the ability to recover coherent vortical features from realistic coarse
+simulations without retraining.  
+Extending the diffusion framework in this direction would address one of the central
+practical limitations identified in Section~\ref{subsec:physics_limitations}: the reliance
+on idealised DNS triplets and a rigid periodic-domain setting.
 
-In parallel, integrating explicit uncertainty quantification would enhance the interpretability of diffusion-based surrogates. Methods that estimate prediction confidence or generate calibrated uncertainty maps could improve decision-making in engineering and scientific applications. Furthermore, the reliance on Fourier-based residual estimation could be mitigated by adopting discretization-agnostic physics operators or differentiable numerical solvers, allowing the model to generalize to non-periodic domains. Finally, coupling the diffusion process directly within numerical solvers would enable on-the-fly correction of coarse simulations, leading to hybrid CFD–ML frameworks capable of dynamically balancing fidelity and computational cost.
+A second direction focuses on scalability to three-dimensional and geometrically complex
+flows.  
+Latent-space diffusion models such as CoNFiLD \cite{yu2023confilid} compress the flow field
+into a low-dimensional implicit representation and perform the diffusion process in this
+latent space, drastically reducing memory and computational cost while preserving physical
+structure.  
+These approaches have been successfully applied to wall-bounded turbulence and separated
+flows, offering zero-shot generalisation across geometries and boundary conditions.  
+Complementary work on transformer-based diffusion architectures \cite{wang2024flowdifftransformer}
+further demonstrates that replacing the U-Net backbone with windowed and plane-wise attention
+significantly improves the model’s ability to handle high-dimensional 3D domains.  
+Together, these advances suggest a path toward diffusion models that are both physically
+aware and computationally feasible for practical CFD applications.
 
-Recent studies already point toward these directions. Latent diffusion and diffusion-transformer models have demonstrated improved efficiency and scalability in complex flow domains, while uncertainty-aware diffusion surrogates have shown promise in quantifying model confidence and detecting failure modes. Building on these advances, future research could make physics-informed diffusion models a standard component of next-generation CFD workflows.
+More broadly, integrating these two lines of work—solver-consistent guidance and
+geometry-aware latent diffusion—would enable hybrid CFD–ML pipelines capable of operating
+on complex meshes, irregular boundaries and realistic simulation outputs.  
+Such models would extend far beyond the controlled Kolmogorov-flow setting of \cite{Shu23} 
+and represent a major step toward making diffusion-based surrogates a standard tool in
+next-generation CFD workflows.
 
-\subsection{Reflections on the Implemented Experiment}
+\appendix
+\section{Additional Figures}
 
-As part of this study, a supplementary experiment was implemented to test the adaptability of the diffusion framework on a simpler but physically rich system: decaying two-dimensional turbulence. This setup preserved the nonlinear dynamics characteristic of turbulent flows while removing external forcing, providing an ideal environment for testing generalization. The experiment reproduced both of the physics-informed guidance strategies introduced by \cite{Shu23}. The learned residual encoding (Strategy 1) provided smooth convergence and consistent reconstructions, while the gradient-descent correction applied during inference (Strategy 2) yielded better physical consistency, particularly in terms of spectral alignment with reference data. 
+\subsection{Training and Validation Loss Curves}
+\label{appendix:loss_curve}
 
-These findings suggest that explicit enforcement of physical constraints during inference can effectively compensate for data limitations, even in settings with sparse or noisy inputs. However, computational cost remains a limiting factor, and further optimization such as reducing the number of denoising steps or introducing uncertainty estimation would be necessary for practical use. Overall, the results reaffirm the potential of physics-informed diffusion models to unify physical accuracy, probabilistic modeling, and machine learning in CFD, while also highlighting the need for efficiency and interpretability improvements in future research.
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.75\textwidth]{loss_curve.png}
+    \caption{Training and validation loss over 20 epochs for the minimal DDPM model.
+    The validation loss uses pure $\varepsilon$-MSE, while the training loss includes an
+    additional physics-inspired penalty term.}
+\end{figure}
 
 
 % Bibliography
