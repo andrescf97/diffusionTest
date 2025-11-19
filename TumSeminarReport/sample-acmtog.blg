@@ -1,61 +1,61 @@
-This is BibTeX, Version 0.99d
+This is BibTeX, Version 0.99d (TeX Live 2025)
 Capacity: max_strings=200000, hash_size=200000, hash_prime=170003
 The top-level auxiliary file: sample-acmtog.aux
-Reallocating 'name_of_file' (item size: 1) to 21 items.
 The style file: ACM-Reference-Format.bst
-Reallocating 'name_of_file' (item size: 1) to 20 items.
-Reallocating 'singl_function' (item size: 4) to 100 items.
-Reallocating 'wiz_functions' (item size: 4) to 6000 items.
+Reallocated singl_function (elt_size=4) to 100 items from 50.
+Reallocated wiz_functions (elt_size=4) to 6000 items from 3000.
 Database file #1: sample-bibliography.bib
-Warning--I didn't find a database entry for "Ronneberger15"
-Warning--I didn't find a database entry for "Song20DDIM"
-Warning--I didn't find a database entry for "Ho22ClassifierFree"
-Warning--I didn't find a database entry for "2408.11104v3"
-Warning--I didn't find a database entry for "liu-thuerey-2024-uncertainty-aware-surrogate-models-for-airfoil-flow-simulations-with-denoising-diffusion-probabilistic"
-Warning--I didn't find a database entry for "moser2024sgdiff"
-Warning--I didn't find a database entry for "yu2023confilid"
-Warning--I didn't find a database entry for "wang2024flowdifftransformer"
-Reallocating 'singl_function' (item size: 4) to 100 items.
+Reallocated singl_function (elt_size=4) to 100 items from 50.
 Warning--no journal in Ho20
-You've used 2 entries,
+Warning--no number and no volume in ho2022classifier
+Warning--page numbers missing in both pages and numpages fields in ho2022classifier
+Warning--no number and no volume in lei2024reconstructing
+Warning--page numbers missing in both pages and numpages fields in lei2024reconstructing
+Warning--page numbers missing in both pages and numpages fields in shur2008hybrid
+Warning--no number and no volume in song2020denoising
+Warning--page numbers missing in both pages and numpages fields in song2020denoising
+Warning--no journal in wang2024confild
+Warning--no number and no volume in wang2024confild
+Warning--page numbers missing in both pages and numpages fields in wang2024confild
+You've used 12 entries,
             5580 wiz_defined-function locations,
-            1520 strings with 18908 characters,
-and the built_in function-call counts, 3365 in all, are:
-= -- 420
-> -- 82
+            1570 strings with 20378 characters,
+and the built_in function-call counts, 13971 in all, are:
+= -- 1965
+> -- 507
 < -- 0
-+ -- 26
-- -- 117
-* -- 256
-:= -- 324
-add.period$ -- 11
-call.type$ -- 2
-change.case$ -- 14
-chr.to.int$ -- 2
-cite$ -- 3
-duplicate$ -- 173
-empty$ -- 123
-format.name$ -- 32
-if$ -- 670
++ -- 156
+- -- 329
+* -- 1055
+:= -- 1461
+add.period$ -- 61
+call.type$ -- 12
+change.case$ -- 85
+chr.to.int$ -- 12
+cite$ -- 23
+duplicate$ -- 862
+empty$ -- 645
+format.name$ -- 212
+if$ -- 3255
 int.to.chr$ -- 1
 int.to.str$ -- 0
-missing$ -- 8
-newline$ -- 62
-num.names$ -- 16
-pop$ -- 54
+missing$ -- 40
+newline$ -- 148
+num.names$ -- 96
+pop$ -- 321
 preamble$ -- 1
-purify$ -- 24
+purify$ -- 143
 quote$ -- 0
-skip$ -- 65
+skip$ -- 271
 stack$ -- 0
-substring$ -- 545
-swap$ -- 26
-text.length$ -- 187
+substring$ -- 1399
+swap$ -- 81
+text.length$ -- 317
 text.prefix$ -- 0
 top$ -- 0
-type$ -- 28
-warning$ -- 1
-while$ -- 13
+type$ -- 168
+warning$ -- 11
+while$ -- 84
 width$ -- 0
-write$ -- 79
-(There were 9 warnings)
+write$ -- 250
+(There were 11 warnings)

@@ -5,73 +5,94 @@
 \citation{Shu23}
 \citation{Ho20}
 \citation{Shu23}
+\citation{launder1974application}
+\citation{pitsch2006large}
+\citation{shur2008hybrid}
 \citation{Shu23}
 \citation{Shu23}
 \providecommand \oddpage@label [2]{}
 \@writefile{toc}{\contentsline {section}{Abstract}{1}{section*.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {1}Introduction}{1}{section.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {2}Summary of Paper}{1}{section.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {2.1}Problem Context}{1}{subsection.2.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {2.2}Methodology}{1}{subsection.2.2}\protected@file@percent }
-\newlabel{subsec:methodology}{{2.2}{1}{Methodology}{subsection.2.2}{}}
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.2.1}Problem formulation as conditional denoising}{1}{subsubsection.2.2.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {1}Summary of Paper}{1}{section.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.1}Problem Context}{1}{subsection.1.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.2}Methodology}{1}{subsection.1.2}\protected@file@percent }
+\newlabel{subsec:methodology}{{1.2}{1}{Methodology}{subsection.1.2}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {1.2.1}Problem formulation as conditional denoising}{1}{subsubsection.1.2.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {1.2.2}Forward diffusion process on HF data}{1}{subsubsection.1.2.2}\protected@file@percent }
 \citation{Ho20}
 \citation{Ronneberger15}
 \citation{Shu23}
-\citation{Song20DDIM}
+\citation{song2020denoising}
 \citation{Shu23}
 \citation{Shu23}
-\citation{Ho22ClassifierFree}
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.2.2}Forward diffusion process on high-fidelity data}{2}{subsubsection.2.2.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.2.3}Reverse process and DDPM training objective}{2}{subsubsection.2.2.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.2.4}Conditional sampling with low-fidelity guidance}{2}{subsubsection.2.2.4}\protected@file@percent }
-\newlabel{eq:guided_init}{{8}{2}{Conditional sampling with low-fidelity guidance}{equation.2.8}{}}
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.2.5}Noise-induced distribution alignment and generalization}{2}{subsubsection.2.2.5}\protected@file@percent }
-\newlabel{subsubsec:physics_guidance}{{2.2.6}{2}{Optional physics-informed guidance}{subsubsection.2.2.6}{}}
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.2.6}Optional physics-informed guidance}{2}{subsubsection.2.2.6}\protected@file@percent }
+\citation{ho2022classifier}
+\citation{song2020denoising}
 \citation{Shu23}
-\citation{Shu23}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {1.2.3}Reverse process and DDPM training objective}{2}{subsubsection.1.2.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {1.2.4}Conditional sampling with LF guidance}{2}{subsubsection.1.2.4}\protected@file@percent }
+\newlabel{eq:guided_init}{{8}{2}{Conditional sampling with LF guidance}{equation.8}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {1.2.5}Noise-induced distribution alignment and generalization}{2}{subsubsection.1.2.5}\protected@file@percent }
+\newlabel{subsubsec:physics_guidance}{{1.2.6}{2}{Optional physics-informed guidance}{subsubsection.1.2.6}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {1.2.6}Optional physics-informed guidance}{2}{subsubsection.1.2.6}\protected@file@percent }
 \citation{Ho20}
-\@writefile{toc}{\contentsline {section}{\numberline {3}Experimental Setup}{3}{section.3}\protected@file@percent }
-\newlabel{sec:experimental_setup}{{3}{3}{Experimental Setup}{section.3}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {2}Experimental Setup}{3}{section.2}\protected@file@percent }
+\newlabel{sec:experimental_setup}{{2}{3}{Experimental Setup}{section.2}{}}
+\newlabel{paragraph:data_and_preprocessing}{{2}{3}{Data and preprocessing}{section*.2}{}}
 \@writefile{toc}{\contentsline {paragraph}{Data and preprocessing.}{3}{section*.2}\protected@file@percent }
+\newlabel{paragraph:model_architecture}{{2}{3}{Model architecture}{section*.3}{}}
 \@writefile{toc}{\contentsline {paragraph}{Model architecture.}{3}{section*.3}\protected@file@percent }
+\newlabel{paragraph:diffusion_process_and_training}{{2}{3}{Diffusion process and training}{section*.4}{}}
 \@writefile{toc}{\contentsline {paragraph}{Diffusion process and training.}{3}{section*.4}\protected@file@percent }
+\newlabel{paragraph:sampling}{{2}{3}{Sampling procedure}{section*.5}{}}
 \@writefile{toc}{\contentsline {paragraph}{Sampling procedure.}{3}{section*.5}\protected@file@percent }
+\newlabel{paragraph:evaluation}{{2}{3}{Evaluation}{section*.6}{}}
 \@writefile{toc}{\contentsline {paragraph}{Evaluation.}{3}{section*.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {3}Results}{3}{section.3}\protected@file@percent }
+\newlabel{sec:results}{{3}{3}{Results}{section.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.1}Training dynamics}{3}{subsection.3.1}\protected@file@percent }
+\newlabel{subsec:training_dynamics}{{3.1}{3}{Training dynamics}{subsection.3.1}{}}
 \citation{Shu23}
 \citation{Shu23}
 \citation{Shu23}
 \citation{Shu23}
-\@writefile{toc}{\contentsline {section}{\numberline {4}Results}{4}{section.4}\protected@file@percent }
-\newlabel{sec:results}{{4}{4}{Results}{section.4}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.1}Training dynamics}{4}{subsection.4.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {5}Conclusions}{4}{section.5}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.1}Advantages and Scientific Impact}{4}{subsection.5.1}\protected@file@percent }
 \citation{Shu23}
-\citation{2408.11104v3,liu-thuerey-2024-uncertainty-aware-surrogate-models-for-airfoil-flow-simulations-with-denoising-diffusion-probabilistic}
+\citation{liu2024uncertainty}
+\@writefile{toc}{\contentsline {section}{\numberline {4}Conclusions}{4}{section.4}\protected@file@percent }
+\newlabel{sec:conclusions}{{4}{4}{Conclusions}{section.4}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.1}Advantages and Scientific Impact}{4}{subsection.4.1}\protected@file@percent }
+\newlabel{subsec:advantages_impact}{{4.1}{4}{Advantages and Scientific Impact}{subsection.4.1}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Limitations and Open Challenges}{4}{subsection.4.2}\protected@file@percent }
+\newlabel{subsec:limitations_challenges}{{4.2}{4}{Limitations and Open Challenges}{subsection.4.2}{}}
 \citation{Shu23}
 \citation{Shu23}
-\citation{moser2024sgdiff}
+\citation{li2025}
 \citation{Shu23}
-\citation{yu2023confilid}
-\citation{wang2024flowdifftransformer}
+\citation{wang2024confild}
+\citation{lei2024reconstructing}
 \citation{Shu23}
 \bibstyle{ACM-Reference-Format}
 \bibdata{sample-bibliography}
 \bibcite{Ho20}{{1}{2020}{{Ho et~al\mbox  {.}}}{{Ho, Jain, and Abbeel}}}
-\bibcite{Shu23}{{2}{2023}{{Shu et~al\mbox  {.}}}{{Shu, Li, and Farimani}}}
+\bibcite{ho2022classifier}{{2}{2022}{{Ho and Salimans}}{{Ho and Salimans}}}
+\bibcite{launder1974application}{{3}{1974}{{Launder and Sharma}}{{Launder and Sharma}}}
+\bibcite{lei2024reconstructing}{{4}{2024}{{Lei}}{{Lei}}}
+\bibcite{li2025}{{5}{2025}{{Li et~al\mbox  {.}}}{{Li, Huang, Wang, Wan, Sun, and Wang}}}
+\bibcite{liu2024uncertainty}{{6}{2024}{{Liu and Thuerey}}{{Liu and Thuerey}}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.3}Future Work and Research Directions}{5}{subsection.4.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {A}Additional Figures}{5}{appendix.A}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {A.1}Training and Validation Loss Curves}{5}{subsection.A.1}\protected@file@percent }
+\newlabel{appendix:loss_curve}{{A.1}{5}{Training and Validation Loss Curves}{subsection.A.1}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Training and validation loss over 20 epochs for the minimal DDPM model. The validation loss uses pure $\varepsilon $-MSE, while the training loss includes an additional physics-inspired penalty term.}}{5}{figure.caption.7}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{References}{5}{section*.9}\protected@file@percent }
+\bibcite{pitsch2006large}{{7}{2006}{{Pitsch}}{{Pitsch}}}
+\bibcite{Ronneberger15}{{8}{2015}{{Ronneberger et~al\mbox  {.}}}{{Ronneberger, Fischer, and Brox}}}
+\bibcite{Shu23}{{9}{2023}{{Shu et~al\mbox  {.}}}{{Shu, Li, and Farimani}}}
+\bibcite{shur2008hybrid}{{10}{2008}{{Shur et~al\mbox  {.}}}{{Shur, Spalart, Strelets, and Travin}}}
+\bibcite{song2020denoising}{{11}{2020}{{Song et~al\mbox  {.}}}{{Song, Meng, and Ermon}}}
+\bibcite{wang2024confild}{{12}{2024}{{Wang et~al\mbox  {.}}}{{Wang, Du, Parikh, Fan, and Liu}}}
 \newlabel{tocindent-1}{0pt}
 \newlabel{tocindent0}{0pt}
 \newlabel{tocindent1}{6.25499pt}
 \newlabel{tocindent2}{12.41998pt}
 \newlabel{tocindent3}{18.198pt}
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.2}Limitations and Open Challenges}{5}{subsection.5.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.3}Future Work and Research Directions}{5}{subsection.5.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {A}Additional Figures}{5}{appendix.A}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {A.1}Training and Validation Loss Curves}{5}{subsection.A.1}\protected@file@percent }
-\newlabel{appendix:loss_curve}{{A.1}{5}{Training and Validation Loss Curves}{subsection.A.1}{}}
-\@writefile{toc}{\contentsline {section}{References}{5}{section*.9}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Training and validation loss over 20 epochs for the minimal DDPM model. The validation loss uses pure $\varepsilon $-MSE, while the training loss includes an additional physics-inspired penalty term.}}{6}{figure.caption.7}\protected@file@percent }
 \newlabel{TotPages}{{6}{6}{}{page.6}{}}
 \gdef \@abspage@last{6}

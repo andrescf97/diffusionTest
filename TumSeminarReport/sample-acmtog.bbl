@@ -22,8 +22,7 @@
 %%% ====================================================================
 
 \ifx \showCODEN    \undefined \def \showCODEN     #1{\unskip}     \fi
-\ifx \showDOI      \undefined \def \showDOI       #1{{\tt DOI:}\penalty0{#1}\ }
-  \fi
+\ifx \showDOI      \undefined \def \showDOI       #1{{\tt DOI:}\penalty0{#1}\ } \fi
 \ifx \showISBNx    \undefined \def \showISBNx     #1{\unskip}     \fi
 \ifx \showISBNxiii \undefined \def \showISBNxiii  #1{\unskip}     \fi
 \ifx \showISSN     \undefined \def \showISSN      #1{\unskip}     \fi
@@ -38,33 +37,112 @@
 \providecommand\natexlab[1]{#1}
 \providecommand\showeprint[2][]{arXiv:#2}
 
-\bibitem[\protect\citeauthoryear{Ho, Jain, and Abbeel}{Ho
-  et~al\mbox{.}}{2020}]%
+\bibitem[\protect\citeauthoryear{Ho, Jain, and Abbeel}{Ho et~al\mbox{.}}{2020}]%
         {Ho20}
-\bibfield{author}{\bibinfo{person}{Jonathan Ho}, \bibinfo{person}{Ajay Jain},
-  {and} \bibinfo{person}{Pieter Abbeel}.} \bibinfo{year}{2020}\natexlab{}.
+\bibfield{author}{\bibinfo{person}{Jonathan Ho}, \bibinfo{person}{Ajay Jain}, {and} \bibinfo{person}{Pieter Abbeel}.} \bibinfo{year}{2020}\natexlab{}.
 \newblock \showarticletitle{Denoising Diffusion Probabilistic Models}.
-\newblock   \bibinfo{volume}{33} (\bibinfo{year}{2020}),
-  \bibinfo{pages}{6840--6851}.
+\newblock   \bibinfo{volume}{33} (\bibinfo{year}{2020}), \bibinfo{pages}{6840--6851}.
 \newblock
 \showURL{%
 \url{https://proceedings.neurips.cc/paper/2020/hash/4c5bcfec8584af0d967f1ab10179ca4b-Abstract.html}}
 
 
-\bibitem[\protect\citeauthoryear{Shu, Li, and Farimani}{Shu
-  et~al\mbox{.}}{2023}]%
+\bibitem[\protect\citeauthoryear{Ho and Salimans}{Ho and Salimans}{2022}]%
+        {ho2022classifier}
+\bibfield{author}{\bibinfo{person}{Jonathan Ho} {and} \bibinfo{person}{Tim Salimans}.} \bibinfo{year}{2022}\natexlab{}.
+\newblock \showarticletitle{Classifier-free diffusion guidance}.
+\newblock \bibinfo{journal}{{\em arXiv preprint arXiv:2207.12598\/}} (\bibinfo{year}{2022}).
+\newblock
+
+
+\bibitem[\protect\citeauthoryear{Launder and Sharma}{Launder and Sharma}{1974}]%
+        {launder1974application}
+\bibfield{author}{\bibinfo{person}{Brian~Edward Launder} {and} \bibinfo{person}{Bahrat~I Sharma}.} \bibinfo{year}{1974}\natexlab{}.
+\newblock \showarticletitle{Application of the energy-dissipation model of turbulence to the calculation of flow near a spinning disc}.
+\newblock \bibinfo{journal}{{\em Letters in heat and mass transfer\/}} \bibinfo{volume}{1}, \bibinfo{number}{2} (\bibinfo{year}{1974}), \bibinfo{pages}{131--137}.
+\newblock
+
+
+\bibitem[\protect\citeauthoryear{Lei}{Lei}{2024}]%
+        {lei2024reconstructing}
+\bibfield{author}{\bibinfo{person}{Fan Lei}.} \bibinfo{year}{2024}\natexlab{}.
+\newblock \showarticletitle{Reconstructing 3D Flow from 2D Data with Diffusion Transformer}.
+\newblock \bibinfo{journal}{{\em arXiv preprint arXiv:2502.02593\/}} (\bibinfo{year}{2024}).
+\newblock
+
+
+\bibitem[\protect\citeauthoryear{Li, Huang, Wang, Wan, Sun, and Wang}{Li et~al\mbox{.}}{2025}]%
+        {li2025}
+\bibfield{author}{\bibinfo{person}{Ruoyan Li}, \bibinfo{person}{Zijie Huang}, \bibinfo{person}{Haixin Wang}, \bibinfo{person}{Guancheng Wan}, \bibinfo{person}{Yizhou Sun}, {and} \bibinfo{person}{Wei Wang}.} \bibinfo{year}{2025}\natexlab{}.
+\newblock \bibinfo{title}{Self-Guided Diffusion Model for Accelerating Computational Fluid Dynamics}.
+\newblock   (\bibinfo{year}{2025}).
+\newblock
+\showeprint[arxiv]{cs.CE/2504.04375}
+\showURL{%
+\url{https://arxiv.org/abs/2504.04375}}
+
+
+\bibitem[\protect\citeauthoryear{Liu and Thuerey}{Liu and Thuerey}{2024}]%
+        {liu2024uncertainty}
+\bibfield{author}{\bibinfo{person}{Qiang Liu} {and} \bibinfo{person}{Nils Thuerey}.} \bibinfo{year}{2024}\natexlab{}.
+\newblock \showarticletitle{Uncertainty-aware surrogate models for airfoil flow simulations with denoising diffusion probabilistic models}.
+\newblock \bibinfo{journal}{{\em AIAA Journal\/}} \bibinfo{volume}{62}, \bibinfo{number}{8} (\bibinfo{year}{2024}), \bibinfo{pages}{2912--2933}.
+\newblock
+
+
+\bibitem[\protect\citeauthoryear{Pitsch}{Pitsch}{2006}]%
+        {pitsch2006large}
+\bibfield{author}{\bibinfo{person}{Heinz Pitsch}.} \bibinfo{year}{2006}\natexlab{}.
+\newblock \showarticletitle{Large-eddy simulation of turbulent combustion}.
+\newblock \bibinfo{journal}{{\em Annu. Rev. Fluid Mech.\/}} \bibinfo{volume}{38}, \bibinfo{number}{1} (\bibinfo{year}{2006}), \bibinfo{pages}{453--482}.
+\newblock
+
+
+\bibitem[\protect\citeauthoryear{Ronneberger, Fischer, and Brox}{Ronneberger et~al\mbox{.}}{2015}]%
+        {Ronneberger15}
+\bibfield{author}{\bibinfo{person}{Olaf Ronneberger}, \bibinfo{person}{Philipp Fischer}, {and} \bibinfo{person}{Thomas Brox}.} \bibinfo{year}{2015}\natexlab{}.
+\newblock \bibinfo{title}{U-Net: Convolutional Networks for Biomedical Image Segmentation}.
+\newblock   (\bibinfo{year}{2015}).
+\newblock
+\showeprint[arxiv]{cs.CV/1505.04597}
+\showURL{%
+\url{https://arxiv.org/abs/1505.04597}}
+
+
+\bibitem[\protect\citeauthoryear{Shu, Li, and Farimani}{Shu et~al\mbox{.}}{2023}]%
         {Shu23}
-\bibfield{author}{\bibinfo{person}{Dule Shu}, \bibinfo{person}{Zijie Li}, {and}
-  \bibinfo{person}{Amir~Barati Farimani}.} \bibinfo{year}{2023}\natexlab{}.
-\newblock \showarticletitle{A physics-informed diffusion model for
-  high-fidelity flow field reconstruction}.
-\newblock \bibinfo{journal}{{\it J. Comput. Phys.}}  \bibinfo{volume}{478}
-  (\bibinfo{date}{April} \bibinfo{year}{2023}), \bibinfo{pages}{111972}.
+\bibfield{author}{\bibinfo{person}{Dule Shu}, \bibinfo{person}{Zijie Li}, {and} \bibinfo{person}{Amir~Barati Farimani}.} \bibinfo{year}{2023}\natexlab{}.
+\newblock \showarticletitle{A physics-informed diffusion model for high-fidelity flow field reconstruction}.
+\newblock \bibinfo{journal}{{\it J. Comput. Phys.}}  \bibinfo{volume}{478} (\bibinfo{date}{April} \bibinfo{year}{2023}), \bibinfo{pages}{111972}.
 \newblock
 \showDOI{%
 \url{https://doi.org/10.1016/j.jcp.2023.111972}}
 \newblock
 \shownote{Elsevier BV.}
+
+
+\bibitem[\protect\citeauthoryear{Shur, Spalart, Strelets, and Travin}{Shur et~al\mbox{.}}{2008}]%
+        {shur2008hybrid}
+\bibfield{author}{\bibinfo{person}{ML Shur}, \bibinfo{person}{PR Spalart}, \bibinfo{person}{MK Strelets}, {and} \bibinfo{person}{AK Travin}.} \bibinfo{year}{2008}\natexlab{}.
+\newblock \showarticletitle{A hybrid RANSLES approach with delayed-DES and modeled LES capabilities}.
+\newblock \bibinfo{journal}{{\em International Journal of Heat and Fluid Flow\/}}  \bibinfo{volume}{29} (\bibinfo{year}{2008}).
+\newblock
+
+
+\bibitem[\protect\citeauthoryear{Song, Meng, and Ermon}{Song et~al\mbox{.}}{2020}]%
+        {song2020denoising}
+\bibfield{author}{\bibinfo{person}{Jiaming Song}, \bibinfo{person}{Chenlin Meng}, {and} \bibinfo{person}{Stefano Ermon}.} \bibinfo{year}{2020}\natexlab{}.
+\newblock \showarticletitle{Denoising diffusion implicit models}.
+\newblock \bibinfo{journal}{{\em arXiv preprint arXiv:2010.02502\/}} (\bibinfo{year}{2020}).
+\newblock
+
+
+\bibitem[\protect\citeauthoryear{Wang, Du, Parikh, Fan, and Liu}{Wang et~al\mbox{.}}{2024}]%
+        {wang2024confild}
+\bibfield{author}{\bibinfo{person}{Jian-Xun Wang}, \bibinfo{person}{Pan Du}, \bibinfo{person}{Meet Parikh}, \bibinfo{person}{Xiantao Fan}, {and} \bibinfo{person}{Xin-Yang Liu}.} \bibinfo{year}{2024}\natexlab{}.
+\newblock \showarticletitle{CoNFiLD: Conditional Neural Field Latent Diffusion Model Generating Spatiotemporal Turbulence}.
+\newblock  (\bibinfo{year}{2024}).
+\newblock
 
 
 \end{thebibliography}
